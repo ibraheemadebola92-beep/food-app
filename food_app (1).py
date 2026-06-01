@@ -4,7 +4,7 @@ from openai import OpenAI
 
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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"
+    api_key="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"
 )
 
 # App title
