@@ -165,7 +165,7 @@ body {
 # Hero Section
 st.markdown("""
 <div class="hero">
-    <h1>👑 ScyIntelligence</h1>
+    <h1>🍴🍝ScyIntelligence</h1>
     <p>AI-Powered Food Analysis & Nutrition Insights</p>
     <p style="color:#FFD700; font-size:0.85em;">Powered by SCY Intelligence AI Studio</p>
 </div>
