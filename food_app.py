@@ -231,7 +231,7 @@ user_input = st.text_input(
 
 col1, col2, col3 = st.columns([2, 1, 1])
 with col2:
-    enter_btn = st.button("entre🔘")
+    send_btn = st.button("send 🔘")
 with col3:
     download_btn = st.button("📥 Save")
 
