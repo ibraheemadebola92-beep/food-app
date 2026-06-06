@@ -17,20 +17,9 @@ st.markdown("""
     border-radius: 15px;
     margin-bottom: 30px;
 }
-st.markdown("""
-<style>
-/* Hide GitHub logo and Streamlit menu */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
 
-/* Hide deploy button */
-.stDeployButton {display: none;}
 
-/* Hide top right icons */
-[data-testid="stToolbar"] {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
+/
 .hero h1 {
     font-size: 3em;
     color: #00d4ff;
