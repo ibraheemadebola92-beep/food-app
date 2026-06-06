@@ -2,6 +2,20 @@
 import streamlit as st
 from openai import OpenAI
 
+
+# Hide Streamlit UI elements
+st.markdown("""
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+.stDeployButton {display: none;}
+[data-testid="stToolbar"] {visibility: hidden;}
+</style>
+""", unsafe_allow_html=True)
+
+# Rest of your app below
+
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=st.secrets["OPENROUTER_API_KEY"]
