@@ -1,9 +1,45 @@
 
+app_code = '''
 import streamlit as st
 from openai import OpenAI
+import json
+from datetime import datetime
 
+# Initialize client
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=st.secrets["OPENROUTER_API_KEY"]
 
-# Hide Streamlit UI elements
+# Multiple models with fallback
+MODELS = [
+    "google/gemma-4-26b-a4b-it:free",
+    "poolside/laguna-xs.2:free",
+    "baidu/cobuddy:free"
+]
+
+def ask_ai(messages):
+    for model in MODELS:
+        try:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages
+            )
+            return response.choices[0].message.content
+        except:
+            continue
+    return "I apologize, all models are currently unavailable. Please try again shortly."
+
+def is_ingredient_list(text):
+    food_keywords = ["rice", "beans", "tomato", "onion", "chicken", "beef", "fish", 
+                    "egg", "milk", "flour", "sugar", "salt", "pepper", "garlic",
+                    "potato", "carrot", "cabbage", "spinach", "yam", "plantain",
+                    "pasta", "bread", "butter", "oil", "water", "corn", "wheat"]
+    text_lower = text.lower()
+    comma_count = text.count(",")
+    keyword_found = any(keyword in text_lower for keyword in food_keywords)
+    return comma_count >= 1 or keyword_found
+
+# Hide Streamlit branding
 st.markdown("""
 <style>
 #MainMenu {visibility: hidden;}
@@ -11,191 +47,289 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 .stDeployButton {display: none;}
 [data-testid="stToolbar"] {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
 
-# Rest of your app below
+* {
+    font-family: "Segoe UI", sans-serif;
+}
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=st.secrets["OPENROUTER_API_KEY"]
-                      
-)
-# App title
-st.markdown("""
-<style>
+body {
+    background-color: #0a0a0a;
+}
+
+/* Chat bubbles */
+.user-bubble {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000000;
+    padding: 12px 18px;
+    border-radius: 18px 18px 4px 18px;
+    margin: 8px 0 8px 15%;
+    font-weight: 500;
+    box-shadow: 0 2px 10px rgba(255,215,0,0.3);
+}
+
+.ai-bubble {
+    background: linear-gradient(135deg, #1a1500, #0a0a00);
+    border: 1px solid #FFD700;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 18px 18px 18px 4px;
+    margin: 8px 15% 8px 0;
+    box-shadow: 0 2px 10px rgba(255,215,0,0.1);
+}
+
+.ai-name {
+    color: #FFD700;
+    font-weight: bold;
+    font-size: 0.85em;
+    margin-bottom: 5px;
+}
+
+.user-name {
+    color: #000000;
+    font-weight: bold;
+    font-size: 0.85em;
+    margin-bottom: 5px;
+}
+
+/* Hero */
 .hero {
     text-align: center;
-    padding: 50px 20px;
-    background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border-radius: 15px;
-    margin-bottom: 30px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #0a0a0a, #1a1500);
+    border: 1px solid #FFD700;
+    border-radius: 20px;
+    margin-bottom: 20px;
 }
 
-
-/
 .hero h1 {
-    font-size: 3em;
-    color: #00d4ff;
-    margin-bottom: 10px;
+    font-size: 2.5em;
+    color: #FFD700;
+    font-weight: bold;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
 }
+
 .hero p {
-    font-size: 1.2em;
-    color: #ffffff;
-    margin-bottom: 10px;
+    color: #cccccc;
+    font-size: 1em;
 }
-.subtitle {
-    font-size: 1em !important;
-    color: #aaaaaa !important;
+
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000000;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 20px;
+    width: 100%;
+}
+
+/* Input */
+.stTextInput > div > div > input {
+    background: #1a1a1a;
+    color: #ffffff;
+    border: 1px solid #FFD700;
+    border-radius: 10px;
+}
+
+/* Sidebar */
+.stSidebar {
+    background: #0a0a0a;
+    border-right: 1px solid #FFD700;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 15px;
+    color: #FFD700;
+    border-top: 1px solid #FFD700;
+    margin-top: 30px;
+    font-size: 0.8em;
+}
+
+/* Welcome card */
+.welcome-card {
+    background: #1a1500;
+    border: 1px solid #FFD700;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px 0;
+    color: #ffffff;
 }
 </style>
+""", unsafe_allow_html=True)
 
+# Hero Section
+st.markdown("""
 <div class="hero">
-    <h1>🍽️ ScyIntelligence</h1>
+    <h1>👑 ScyIntelligence</h1>
     <p>AI-Powered Food Analysis & Nutrition Insights</p>
-    <p class="subtitle">
-        Analyze ingredients, discover nutritional value,
-        identify health concerns, and get intelligent food recommendations.
-    </p>
+    <p style="color:#FFD700; font-size:0.85em;">Powered by SCY Intelligence AI Studio</p>
 </div>
 """, unsafe_allow_html=True)
-st.write("Powered by ScyIntelligence — Your AI Food Expert")
 
-col1, col2, col3 = st.columns(3)
+# Sidebar
+with st.sidebar:
+    st.markdown("## 👑 ScyIntelligence")
+    st.markdown("---")
+    
+    user_name = st.text_input("Your Name:", placeholder="Enter your name")
+    language = st.selectbox("🌍 Language", 
+        ["English", "French", "Spanish", "Arabic", "Hausa", "Yoruba", "Igbo"])
+    dietary = st.multiselect("🥗 Dietary Preferences",
+        ["Halal", "Vegan", "Vegetarian", "Gluten-Free", "Diabetic-Friendly", "Keto"])
+    
+    st.markdown("---")
+    st.markdown("### 💡 Tips")
+    st.markdown("""
+    - Type **hello** to start
+    - List ingredients to analyze
+    - Ask any food question
+    - Type **clear** to reset chat
+    """)
+    
+    st.markdown("---")
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.messages = []
+        st.rerun()
+    
+    st.markdown("---")
+    st.markdown("*SCY Intelligence AI Studio*")
+    st.markdown("*© 2026 All rights reserved*")
 
-with col1:
-    st.metric(
-        label="Recipes Generated",
-        value="100+"
-    )
+# Initialize chat
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
+# Display chat history
+for message in st.session_state.messages:
+    if message["role"] == "user":
+        name = user_name if user_name else "You"
+        st.markdown(f"""
+        <div class="user-bubble">
+            <div class="user-name">{name}</div>
+            {message["content"]}
+        </div>
+        """, unsafe_allow_html=True)
+    elif message["role"] == "assistant":
+        st.markdown(f"""
+        <div class="ai-bubble">
+            <div class="ai-name">👑 ScyIntelligence</div>
+            {message["content"]}
+        </div>
+        """, unsafe_allow_html=True)
+
+# Chat input
+user_input = st.text_input(
+    "Message ScyIntelligence:",
+    placeholder="Say hello or enter ingredients...",
+    key="user_input"
+)
+
+col1, col2, col3 = st.columns([2, 1, 1])
 with col2:
-    st.metric(
-        label="Food Analyses",
-        value="500+"
-    )
-
+    send_btn = st.button("Send 📨")
 with col3:
-    st.metric(
-        label="AI Accuracy",
-        value="95%"
-    )
-# Sidebar options
-st.sidebar.title("⚙️ Settings")
-language = st.sidebar.selectbox("Language",
-    ["English", "French", "Spanish", "Arabic", "Hausa"])
-dietary = st.sidebar.multiselect("Dietary Filters",
-    ["Halal", "Vegan", "Gluten-Free", "Diabetic-Friendly"])
+    download_btn = st.button("📥 Save")
 
-# Main tabs
-tab1, tab2 = st.tabs(["🔍 Analyze Ingredients", "💬 Food Q&A"])
+# Handle send
+if send_btn and user_input:
+    name = user_name if user_name else "User"
+    
+    # Add user message
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input
+    })
+    
+    # Build system prompt
+    system_prompt = f"""You are ScyIntelligence, a world-class AI food engineering expert created by SCY Intelligence AI Studio.
 
-# Tab 1 - Ingredient Analyzer
-with tab1:
-    st.subheader("Ingredient Analyzer")
+You speak professionally but warmly like a PhD food engineer.
+Always address the user as {name}.
+Respond in {language}.
+Consider these dietary preferences: {dietary}.
 
-    st.markdown("### 🍲 Try these examples")
+When given ingredients:
+- Provide a detailed recipe
+- Full nutritional table with calories per ingredient
+- Total calorie count
+- Health score out of 10 with explanation
+- Food safety tips
+- Allergen warnings
+- Shelf life information
+- Food engineering insights (Maillard reaction, starch gelatinization etc.)
+- Suitability for dietary preferences
 
-    ex1, ex2, ex3 = st.columns(3)
+When asked questions:
+- Answer as a professional food engineering expert
+- Be detailed but clear
+- Use food science terminology appropriately
 
-    with ex1:
-        st.code("rice, chicken, onions")
+When greeted:
+- Greet back warmly and professionally
+- Introduce yourself briefly
+- Ask how you can help
 
-    with ex2:
-        st.code("beans, tomato, pepper")
+Only discuss food-related topics. If asked about non-food topics, politely redirect.
+"""
+    
+    # Prepare messages for AI
+    ai_messages = [{"role": "system", "content": system_prompt}]
+    
+    # Add conversation history
+    for msg in st.session_state.messages:
+        if msg["role"] in ["user", "assistant"]:
+            ai_messages.append(msg)
+    
+    # Get AI response
+    with st.spinner("👑 ScyIntelligence is thinking..."):
+        if is_ingredient_list(user_input):
+            ai_messages[-1]["content"] = f"Please analyze these ingredients: {user_input}"
+        
+        reply = ask_ai(ai_messages)
+    
+    # Add AI response
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": reply
+    })
+    
+    st.rerun()
 
-    with ex3:
-         st.code("fish, garlic, lemon")
+# Handle download
+if download_btn:
+    if st.session_state.messages:
+        chat_text = f"ScyIntelligence Chat Report\\n"
+        chat_text += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}\\n"
+        chat_text += f"User: {user_name}\\n"
+        chat_text += "="*50 + "\\n\\n"
+        
+        for msg in st.session_state.messages:
+            role = user_name if msg["role"] == "user" else "ScyIntelligence"
+            chat_text += f"{role}:\\n{msg['content']}\\n\\n"
+        
+        st.download_button(
+            "📥 Download Chat",
+            chat_text,
+            file_name=f"scyintelligence_report_{datetime.now().strftime('%Y%m%d')}.txt"
+        )
+    else:
+        st.warning("No chat to download yet!")
 
-    ingredients = st.text_area(
-         "Enter ingredients",
-         placeholder="Example: rice, chicken, tomatoes, onions",
-         height=120
-)
+# Footer
+st.markdown("""
+<div class="footer">
+    👑 ScyIntelligence AI Food System | 
+    Powered by SCY Intelligence AI Studio | 
+    Built with AI 🤖 | © 2026
+</div>
+""", unsafe_allow_html=True)
+'''
 
-    analyze = st.button(
-    "🚀 Analyze Ingredients",
-    use_container_width=True
-)
+with open("food_app.py", "w") as f:
+    f.write(app_code)
 
-if analyze:
-        if ingredients:
-            with st.spinner("AI is analyzing..."):
-                prompt = f"""Analyze these ingredients: {ingredients}
-                Dietary requirements: {dietary}
-                Language: {language}
-
-                Provide:
-                1. A recipe using these ingredients
-                2. Nutritional table with calories
-                3. Total calorie count
-                4. Health rating out of 10
-                5. Food safety tips
-                6. Dietary suitability ({dietary})
-                """
-
-                response = client.chat.completions.create(
-                    model="nvidia/nemotron-nano-9b-v2:free",
-                    messages=[
-                        {"role": "system", "content": "You are a food engineering expert and nutritionist."},
-                        {"role": "user", "content": prompt}
-                    ]
-                )
-
-                result = response.choices[0].message.content
-                metric1, metric2, metric3 = st.columns(3)
-
-                with metric1:
-                    st.metric("Health Score", "8/10")
-
-                with metric2:
-                    st.metric("Calories", "~450")
-
-                with metric3:
-                    st.metric("Safety", "Good")
-
-                with st.container(border=True):
-                    st.markdown(result)
-
-                # Save to history
-                if "history" not in st.session_state:
-                    st.session_state.history = []
-                st.session_state.history.append({
-                    "ingredients": ingredients,
-                    "result": result
-                })
-
-                # Download button
-                st.download_button(
-                    "📥 Download Report",
-                    result,
-                    file_name="food_report.txt"
-                )
-        else:
-            st.warning("Please enter ingredients!")
-
-# Tab 2 - Food Q&A
-with tab2:
-    st.subheader("Ask Any Food Question")
-    question = st.text_input("Ask a food question:")
-
-    if st.button("Ask"):
-        if question:
-            with st.spinner("Thinking..."):
-                response = client.chat.completions.create(
-                    model="nvidia/nemotron-nano-9b-v2:free",
-                    messages=[
-                        {"role": "system", "content": "You are a food expert. Answer food-related questions only. If asked non-food questions, politely redirect to food topics."},
-                        {"role": "user", "content": question}
-                    ]
-                )
-                st.markdown(response.choices[0].message.content)
-        else:
-            st.warning("Please ask a question!")
-
-# History section
-if "history" in st.session_state and st.session_state.history:
-    st.subheader("📋 Analysis History")
-    for i, item in enumerate(st.session_state.history):
-        with st.expander(f"Analysis {i+1}: {item['ingredients']}"):
-            st.markdown(item["result"])
+print("ScyIntelligence Premium launched!")
