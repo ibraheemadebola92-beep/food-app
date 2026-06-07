@@ -14,6 +14,11 @@ client = OpenAI(
 # Multiple models with fallback
 MODELS = [
     "google/gemma-4-26b-a4b-it:free",
+    "google/gemma-3-12b-it:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "mistralai/mistral-7b-instruct:free",
+    "deepseek/deepseek-r1:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
     "poolside/laguna-xs.2:free",
     "baidu/cobuddy:free"
 ]
